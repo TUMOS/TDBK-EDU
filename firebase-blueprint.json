@@ -1,0 +1,247 @@
+{
+  "entities": {
+    "Student": {
+      "title": "Student",
+      "description": "Represents a student in the school ecosystem",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Student primary ID" },
+        "name": { "type": "string", "description": "Full name of student" },
+        "grade": { "type": "string", "description": "Grade category" },
+        "stream": { "type": "string", "description": "Stream or class group" },
+        "pin": { "type": "string", "description": "4-digit PIN for kiosk login" },
+        "pocketMoneyBalance": { "type": "number", "description": "Available pocket money balance" },
+        "totalFees": { "type": "number", "description": "Total term fees" },
+        "paidFees": { "type": "number", "description": "Paid amount" },
+        "parentName": { "type": "string", "description": "Name of registered parent" },
+        "parentPhone": { "type": "string", "description": "Phone number of parent" },
+        "avatar": { "type": "string", "description": "Visual avatar style index" },
+        "status": {
+          "type": "string",
+          "enum": ["In School", "Out of School", "Sick Bay", "Suspended"]
+        }
+      },
+      "required": ["id", "name", "grade", "stream", "pin", "pocketMoneyBalance", "totalFees", "paidFees", "status"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Maintains student daily class check-in status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "grade": { "type": "string" },
+        "stream": { "type": "string" },
+        "status": { "type": "string", "enum": ["Present", "Absent", "Permission", "Sick"] },
+        "date": { "type": "string" },
+        "markedBy": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "grade", "stream", "status", "date", "markedBy", "timestamp"]
+    },
+    "PermissionRequest": {
+      "title": "PermissionRequest",
+      "description": "Leave slip and gate exit permission requests",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "grade": { "type": "string" },
+        "stream": { "type": "string" },
+        "reason": { "type": "string" },
+        "passType": { "type": "string", "enum": ["Day Out", "Medical Out", "School Leave", "Weekend Out"] },
+        "dateRequested": { "type": "string" },
+        "dateValid": { "type": "string" },
+        "status": { "type": "string", "enum": ["Pending", "Approved", "Declined", "Completed"] },
+        "approvedBy": { "type": "string" },
+        "approvedDate": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "grade", "stream", "reason", "passType", "dateRequested", "dateValid", "status"]
+    },
+    "HealthRecord": {
+      "title": "HealthRecord",
+      "description": "Sick bay admission logs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "grade": { "type": "string" },
+        "stream": { "type": "string" },
+        "symptoms": { "type": "string" },
+        "severity": { "type": "string", "enum": ["Mild", "Moderate", "Severe"] },
+        "actionTaken": { "type": "string" },
+        "status": { "type": "string", "enum": ["Observation", "Discharged To Class", "Sent Home", "Referred to Hospital"] },
+        "dateLogged": { "type": "string" },
+        "loggedBy": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "grade", "stream", "symptoms", "severity", "actionTaken", "status", "dateLogged", "loggedBy"]
+    },
+    "PocketMoneyTransaction": {
+      "title": "PocketMoneyTransaction",
+      "description": "Logs of deposit and withdrawals for student pocket money",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["Deposit", "Withdraw", "Purchase"] },
+        "source": { "type": "string", "enum": ["M-Pesa", "Kiosk", "Bursar Office"] },
+        "reference": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "amount", "type", "source", "reference", "timestamp"]
+    },
+    "FeePayment": {
+      "title": "FeePayment",
+      "description": "Log of Term school fee transactions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "amount": { "type": "number" },
+        "method": { "type": "string", "enum": ["M-Pesa", "Bank Transfer", "Cheque"] },
+        "reference": { "type": "string" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "amount", "method", "reference", "timestamp"]
+    },
+    "CbcAssessment": {
+      "title": "CbcAssessment",
+      "description": "Continuous-Based Curriculum (CBC) standard teacher task reports",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "grade": { "type": "string" },
+        "learningArea": { "type": "string" },
+        "strand": { "type": "string" },
+        "task": { "type": "string" },
+        "score": { "type": "string", "enum": ["EE", "ME", "AE", "BE"] },
+        "comments": { "type": "string" },
+        "assessedBy": { "type": "string" },
+        "date": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "grade", "learningArea", "strand", "task", "score", "comments", "assessedBy", "date"]
+    },
+    "GateLog": {
+      "title": "GateLog",
+      "description": "Check-in and Check-out crossings history",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "grade": { "type": "string" },
+        "stream": { "type": "string" },
+        "action": { "type": "string", "enum": ["Check-In", "Check-Out"] },
+        "passType": { "type": "string", "enum": ["Day Out", "Medical Out", "School Leave", "Weekend Out"] },
+        "timestamp": { "type": "string" },
+        "clearedBy": { "type": "string" },
+        "permissionId": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "grade", "stream", "action", "timestamp", "clearedBy"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Instant messaging threads between Parents, Teachers, and the School Principal",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "sender": { "type": "string", "enum": ["Parent", "Teacher", "Principal", "System"] },
+        "senderName": { "type": "string" },
+        "recipientId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "isRead": { "type": "boolean" }
+      },
+      "required": ["id", "sender", "senderName", "recipientId", "content", "timestamp", "isRead"]
+    },
+    "Staff": {
+      "title": "Staff",
+      "description": "Represents school staff members and authorization status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["Teacher", "Gate Guardian", "Bursar", "Matron", "Nurse"] },
+        "phone": { "type": "string" },
+        "nationalId": { "type": "string" },
+        "specialization": { "type": "string" },
+        "status": { "type": "string", "enum": ["Active", "Terminated"] },
+        "dateJoined": { "type": "string" }
+      },
+      "required": ["id", "name", "role", "phone", "nationalId", "status", "dateJoined"]
+    },
+    "VisitorLog": {
+      "title": "VisitorLog",
+      "description": "Digitized ledger of external gate visitors at school main entrance",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "nationalId": { "type": "string" },
+        "purpose": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "timeIn": { "type": "string" },
+        "timeOut": { "type": "string" },
+        "status": { "type": "string", "enum": ["Inside", "Checked-Out"] },
+        "clearedBy": { "type": "string" }
+      },
+      "required": ["id", "name", "phone", "nationalId", "purpose", "timeIn", "status", "clearedBy"]
+    }
+  },
+  "firestore": {
+    "/students/{studentId}": {
+      "schema": "Student",
+      "description": "Individual student files"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": "AttendanceRecord",
+      "description": "Class roll records"
+    },
+    "/permissions/{permissionId}": {
+      "schema": "PermissionRequest",
+      "description": "Approved out of bounds leave slips"
+    },
+    "/healthRecords/{healthId}": {
+      "schema": "HealthRecord",
+      "description": "Infirmary visit admissions"
+    },
+    "/transactions/{transactionId}": {
+      "schema": "PocketMoneyTransaction",
+      "description": "Ledger of digital tuck shop cash transactions"
+    },
+    "/feePayments/{paymentId}": {
+      "schema": "FeePayment",
+      "description": "Bursar receipt registers"
+    },
+    "/cbcAssessments/{cbcId}": {
+      "schema": "CbcAssessment",
+      "description": "Pedagogical achievement scores"
+    },
+    "/gateLogs/{gateLogId}": {
+      "schema": "GateLog",
+      "description": "Physical security checkpoint crossing history logs"
+    },
+    "/chatMessages/{chatId}": {
+      "schema": "ChatMessage",
+      "description": "Instant chat communication messages"
+    },
+    "/staff/{staffId}": {
+      "schema": "Staff",
+      "description": "School administration and general staff profiles"
+    },
+    "/visitorLogs/{visitorLogId}": {
+      "schema": "VisitorLog",
+      "description": "Live digital register logs of inbound/outbound external visitors"
+    }
+  }
+}

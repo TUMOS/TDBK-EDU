@@ -1,0 +1,6 @@
+{
+  "name": "TDBK School Ecosystem",
+  "description": "Comprehensive school management suite combining Principal Dashboard, Student Kiosk, Teacher App, Parent App, and Gate Kiosk simulators with a synchronized unified state engine.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

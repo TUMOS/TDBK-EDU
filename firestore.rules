@@ -1,0 +1,226 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net: Default-deny all access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- SHARED REUSABLE SECURITY UTILITIES ---
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- ENTITY SCHEMA VALIDATORS ---
+    function isValidStudent(data) {
+      return data.id is string && data.id.size() <= 32
+        && data.name is string && data.name.size() <= 100
+        && data.grade is string && data.grade.size() <= 32
+        && data.stream is string && data.stream.size() <= 32
+        && data.pin is string && data.pin.size() <= 8
+        && data.pocketMoneyBalance is number && data.pocketMoneyBalance >= 0
+        && data.totalFees is number && data.totalFees >= 0
+        && data.paidFees is number && data.paidFees >= 0
+        && data.status is string && data.status.size() <= 32;
+    }
+
+    function isValidAttendanceRecord(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.studentId is string && data.studentId.size() <= 64
+        && data.studentName is string && data.studentName.size() <= 100
+        && data.grade is string && data.grade.size() <= 32
+        && data.stream is string && data.stream.size() <= 32
+        && data.status is string && data.status.size() <= 20
+        && data.date is string && data.date.size() <= 20
+        && data.markedBy is string && data.markedBy.size() <= 100;
+    }
+
+    function isValidPermissionRequest(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.studentId is string && data.studentId.size() <= 64
+        && data.studentName is string && data.studentName.size() <= 100
+        && data.grade is string && data.grade.size() <= 32
+        && data.stream is string && data.stream.size() <= 32
+        && data.reason is string && data.reason.size() <= 500
+        && data.passType is string && data.passType.size() <= 30
+        && data.dateRequested is string && data.dateRequested.size() <= 20
+        && data.dateValid is string && data.dateValid.size() <= 20
+        && data.status is string && data.status.size() <= 20;
+    }
+
+    function isValidHealthRecord(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.studentId is string && data.studentId.size() <= 64
+        && data.studentName is string && data.studentName.size() <= 100
+        && data.grade is string && data.grade.size() <= 32
+        && data.stream is string && data.stream.size() <= 32
+        && data.symptoms is string && data.symptoms.size() <= 500
+        && data.severity is string && data.severity.size() <= 20
+        && data.actionTaken is string && data.actionTaken.size() <= 500
+        && data.status is string && data.status.size() <= 30
+        && data.dateLogged is string && data.dateLogged.size() <= 20
+        && data.loggedBy is string && data.loggedBy.size() <= 100;
+    }
+
+    function isValidTransaction(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.studentId is string && data.studentId.size() <= 64
+        && data.studentName is string && data.studentName.size() <= 100
+        && data.amount is number && data.amount >= 0
+        && data.type is string && data.type.size() <= 20
+        && data.source is string && data.source.size() <= 30
+        && data.reference is string && data.reference.size() <= 100;
+    }
+
+    function isValidFeePayment(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.studentId is string && data.studentId.size() <= 64
+        && data.studentName is string && data.studentName.size() <= 100
+        && data.amount is number && data.amount >= 0
+        && data.method is string && data.method.size() <= 30
+        && data.reference is string && data.reference.size() <= 100;
+    }
+
+    function isValidCbcAssessment(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.studentId is string && data.studentId.size() <= 64
+        && data.studentName is string && data.studentName.size() <= 100
+        && data.grade is string && data.grade.size() <= 32
+        && data.learningArea is string && data.learningArea.size() <= 100
+        && data.strand is string && data.strand.size() <= 100
+        && data.task is string && data.task.size() <= 200
+        && data.score is string && data.score.size() <= 4
+        && data.comments is string && data.comments.size() <= 1000
+        && data.assessedBy is string && data.assessedBy.size() <= 100
+        && data.date is string && data.date.size() <= 20;
+    }
+
+    function isValidGateLog(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.studentId is string && data.studentId.size() <= 64
+        && data.studentName is string && data.studentName.size() <= 100
+        && data.grade is string && data.grade.size() <= 32
+        && data.stream is string && data.stream.size() <= 32
+        && data.action is string && data.action.size() <= 20
+        && data.clearedBy is string && data.clearedBy.size() <= 100;
+    }
+
+    function isValidChatMessage(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.sender is string && data.sender.size() <= 20
+        && data.senderName is string && data.senderName.size() <= 100
+        && data.recipientId is string && data.recipientId.size() <= 100
+        && data.content is string && data.content.size() <= 2000
+        && data.isRead is bool;
+    }
+
+    function isValidStaff(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.name is string && data.name.size() <= 100
+        && data.role is string && data.role.size() <= 32
+        && data.phone is string && data.phone.size() <= 32
+        && data.nationalId is string && data.nationalId.size() <= 32
+        && data.status is string && data.status.size() <= 32
+        && data.dateJoined is string && data.dateJoined.size() <= 32;
+    }
+
+    function isValidVisitorLog(data) {
+      return data.id is string && data.id.size() <= 64
+        && data.name is string && data.name.size() <= 100
+        && data.phone is string && data.phone.size() <= 32
+        && data.nationalId is string && data.nationalId.size() <= 32
+        && data.purpose is string && data.purpose.size() <= 500
+        && data.timeIn is string && data.timeIn.size() <= 32
+        && data.status is string && data.status.size() <= 32
+        && data.clearedBy is string && data.clearedBy.size() <= 100;
+    }
+
+    // --- ENDPOINTS REGISTRATION ---
+
+    // STUDENTS
+    match /students/{studentId} {
+      allow read, delete: if true;
+      allow create: if isValidId(studentId) && isValidStudent(incoming());
+      allow update: if isValidId(studentId) && isValidStudent(incoming());
+    }
+
+    // ATTENDANCE
+    match /attendance/{attendanceId} {
+      allow read, delete: if true;
+      allow create: if isValidId(attendanceId) && isValidAttendanceRecord(incoming());
+      allow update: if isValidId(attendanceId) && isValidAttendanceRecord(incoming());
+    }
+
+    // PERMISSIONS
+    match /permissions/{permissionId} {
+      allow read, delete: if true;
+      allow create: if isValidId(permissionId) && isValidPermissionRequest(incoming());
+      allow update: if isValidId(permissionId) && isValidPermissionRequest(incoming());
+    }
+
+    // HEALTH RECORDS
+    match /healthRecords/{healthId} {
+      allow read, delete: if true;
+      allow create: if isValidId(healthId) && isValidHealthRecord(incoming());
+      allow update: if isValidId(healthId) && isValidHealthRecord(incoming());
+    }
+
+    // TRANSACTIONS
+    match /transactions/{transactionId} {
+      allow read, delete: if true;
+      allow create: if isValidId(transactionId) && isValidTransaction(incoming());
+      allow update: if isValidId(transactionId) && isValidTransaction(incoming());
+    }
+
+    // FEE PAYMENTS
+    match /feePayments/{paymentId} {
+      allow read, delete: if true;
+      allow create: if isValidId(paymentId) && isValidFeePayment(incoming());
+      allow update: if isValidId(paymentId) && isValidFeePayment(incoming());
+    }
+
+    // CBC ASSESSMENTS
+    match /cbcAssessments/{cbcId} {
+      allow read, delete: if true;
+      allow create: if isValidId(cbcId) && isValidCbcAssessment(incoming());
+      allow update: if isValidId(cbcId) && isValidCbcAssessment(incoming());
+    }
+
+    // GATE LOGS
+    match /gateLogs/{gateLogId} {
+      allow read, delete: if true;
+      allow create: if isValidId(gateLogId) && isValidGateLog(incoming());
+      allow update: if isValidId(gateLogId) && isValidGateLog(incoming());
+    }
+
+    // CHAT MESSAGES
+    match /chatMessages/{chatId} {
+      allow read, delete: if true;
+      allow create: if isValidId(chatId) && isValidChatMessage(incoming());
+      allow update: if isValidId(chatId) && isValidChatMessage(incoming());
+    }
+
+    // STAFF
+    match /staff/{staffId} {
+      allow read, delete: if true;
+      allow create: if isValidId(staffId) && isValidStaff(incoming());
+      allow update: if isValidId(staffId) && isValidStaff(incoming());
+    }
+
+    // VISITORS
+    match /visitorLogs/{visitorLogId} {
+      allow read, delete: if true;
+      allow create: if isValidId(visitorLogId) && isValidVisitorLog(incoming());
+      allow update: if isValidId(visitorLogId) && isValidVisitorLog(incoming());
+    }
+  }
+}

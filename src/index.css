@@ -1,0 +1,144 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  /* Update Slate & Gray colors globally to map onto core theme design colors */
+  --color-slate-50: #0a0a0c;
+  --color-slate-100: #0d0d10;
+  --color-slate-200: #1f1f23;
+  --color-slate-300: #2d2d35;
+  --color-slate-400: #a1a1aa;
+  --color-slate-500: #8e8e93;
+  --color-slate-800: #e2e2e2;
+  --color-slate-905: #0a0a0c;
+  --color-slate-930: #0d0d10;
+  --color-slate-950: #0d0d10;
+
+  --color-gray-50: #0d0d10;
+  --color-gray-100: #1c1c21;
+  --color-gray-150: #1f1f23;
+  --color-gray-200: #1f1f23;
+  --color-gray-300: #2d2d35;
+  --color-gray-500: #8e8e93;
+  --color-gray-900: #e2e2e2;
+
+  --color-blue-50: #0d0d10;
+  --color-blue-100: #1f1f23;
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+
+  --color-indigo-50: #0d0d10;
+  --color-indigo-100: #1c1c21;
+  --color-indigo-650: #2563eb;
+  --color-indigo-600: #2563eb;
+  --color-indigo-700: #1d4ed8;
+
+  --color-emerald-50: #0d0d10;
+  --color-emerald-100: #064e3b;
+  --color-emerald-700: #059669;
+  --color-emerald-800: #10b981;
+
+  --color-amber-50: #15161a;
+  --color-amber-100: #78350f;
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
+
+  --color-red-50: #15161a;
+  --color-red-100: #7f1d1d;
+  --color-red-650: #dc2626;
+
+  --color-purple-50: #15161a;
+  --color-purple-100: #581c87;
+  --color-purple-600: #9333ea;
+  --color-purple-800: #a855f7;
+}
+
+/* Master body elements mapping */
+body, html {
+  background-color: #0a0a0c !important;
+  color: #e2e2e2 !important;
+}
+
+/* Base Component classes overrides */
+#principal-panel, #teacher-panel, #gate-panel, #student-kiosk, #parent-app {
+  background-color: #0a0a0c !important;
+  color: #e2e2e2 !important;
+}
+
+/* Card overrides */
+.bg-white, [class*="bg-white"] {
+  background-color: #15161a !important;
+}
+
+/* Background Utility corrections */
+.bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100 {
+  background-color: #0a0a0c !important;
+}
+
+.bg-slate-900, .bg-slate-950, .bg-slate-850 {
+  background-color: #0d0d10 !important;
+}
+
+/* Primary and secondary text adjustments */
+.text-slate-800, .text-slate-900, .text-slate-950, .text-gray-800, .text-gray-900, .text-gray-950 {
+  color: #e2e2e2 !important;
+}
+
+.text-slate-500, .text-slate-600, .text-gray-400, .text-gray-500, .text-gray-600 {
+  color: #8e8e93 !important;
+}
+
+/* Border adjustments */
+.border, .border-slate-800, .border-slate-850, .border-slate-200, .border-gray-200, .border-gray-150, .border-gray-100 {
+  border-color: #1f1f23 !important;
+}
+
+/* Form controls styling in Elegant Dark Theme */
+input, select, textarea {
+  background-color: #1c1c21 !important;
+  color: #ffffff !important;
+  border-color: #2d2d35 !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #2563eb !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+}
+
+option {
+  background-color: #15161a !important;
+  color: #ffffff !important;
+}
+
+/* Secondary Actions default buttons */
+.bg-gray-100, .bg-slate-100 {
+  background-color: #1c1c21 !important;
+}
+
+/* Dividers styling */
+.divide-y > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1f1f23 !important;
+}
+
+/* Unified Custom Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #222328;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #2d2d35;
+}
