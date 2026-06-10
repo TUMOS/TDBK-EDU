@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import PaymentUpload from './PaymentUpload';
 import { 
   Smartphone, Wallet, BookOpen, HeartPulse, Send, 
   MessageCircle, ShieldAlert, ArrowUpRight, HelpCircle, 
@@ -639,6 +640,8 @@ export default function ParentApp({
                   <h3 className="text-base font-bold text-slate-900 leading-tight">Card Funding & Canteen Logs</h3>
                   <p className="text-[10px] text-slate-400 leading-tight">Top-up card pockets instantly using virtual Safaricom Lipa Na M-Pesa API gateways.</p>
                 </div>
+
+                <PaymentUpload />
 
                 {/* Pocket money balance */}
                 <div className="bg-purple-950 p-4 rounded-2xl text-white space-y-1 relative overflow-hidden">

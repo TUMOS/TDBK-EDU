@@ -9,14 +9,14 @@ import {
   ShieldCheck, Users, Briefcase, Key, Compass, 
   HelpCircle, Sparkles, BookOpen, Clock, Play, 
   CheckCircle, ArrowRight, Activity, Wallet, Smartphone, ShieldAlert,
-  Landmark, Moon, Share2
+  Landmark, Moon, Share2, ShoppingBasket
 } from 'lucide-react';
 
 import { 
   Student, AttendanceRecord, PermissionRequest, 
   HealthRecord, PocketMoneyTransaction, CbcAssessment, 
   GateLog, ChatMessage, AttendanceStatus, HealthSeverity, PassType, FeePayment, HealthStatus,
-  Staff, VisitorLog
+  Staff, VisitorLog, CanteenItem, CanteenOrder
 } from './types';
 
 import { 
@@ -28,6 +28,7 @@ import {
 
 // Component imports
 import PrincipalDashboard from './components/PrincipalDashboard';
+import CanteenHub from './components/CanteenHub';
 import StudentKiosk from './components/StudentKiosk';
 import TeacherPortal from './components/TeacherPortal';
 import ParentApp from './components/ParentApp';
@@ -36,8 +37,8 @@ import BursarDashboard from './components/BursarDashboard';
 import MatronDashboard from './components/MatronDashboard';
 
 // Firebase Integrations
-import { db, createDocument, updateDocument, seedCollectionIfEmpty } from './lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { db, auth, createDocument, updateDocument, seedCollectionIfEmpty, getTenantCollection } from './lib/firebase';
+import { collection, onSnapshot, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 
 export default function App() {
   // Core unified state pools matching Firebase Real-Time Synchronization subscriptions
@@ -52,6 +53,8 @@ export default function App() {
   const [feePayments, setFeePayments] = useState<FeePayment[]>([]);
   const [staff, setStaff] = useState<Staff[]>([]);
   const [visitorLogs, setVisitorLogs] = useState<VisitorLog[]>([]);
+  const [canteenItems, setCanteenItems] = useState<CanteenItem[]>([]);
+  const [canteenOrders, setCanteenOrders] = useState<CanteenOrder[]>([]);
   
   const [loading, setLoading] = useState(true);
 
@@ -64,8 +67,49 @@ export default function App() {
       setLoading(false);
     }, 2500);
 
+    // Auth listener for role-based routing
+    const unsubscribeAuth = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        // Query staff to find role
+        const q = query(getTenantCollection('staff'), where('authUid', '==', user.uid));
+        const staffSnap = await getDocs(q);
+        if (!staffSnap.empty) {
+          const staff = staffSnap.docs[0].data() as Staff;
+          const roleMapping: Record<string, any> = {
+            'Teacher': 'teacher',
+            'Gate Guardian': 'gate',
+            'Bursar': 'bursar',
+            'Matron': 'matron',
+            'Nurse': 'matron',
+            'Secretary': 'teacher', // Secretary might need teacher access
+            'Principal': 'principal',
+            'Parent': 'parent'
+          };
+          setActiveRole(roleMapping[staff.role] || 'principal');
+        }
+      }
+    });
+
     async function fetchBootstrap() {
       try {
+        // Initialize tenant metadata if missing
+        const tenantRef = doc(db, 'institutions', 'msa_academy_demo');
+        const tenantSnap = await getDoc(tenantRef);
+        if (!tenantSnap.exists()) {
+          console.log("Seeding MSA Academy Demo Tenant...");
+          await setDoc(tenantRef, {
+            school_name: "Mombasa Elite Academy",
+            custom_onboarding_fee: 50000,
+            active_student_count: 450
+          });
+          
+          // Seed Staff
+          const staffRef = collection(db, 'institutions', 'msa_academy_demo', 'staff');
+          await setDoc(doc(staffRef, 'PRIN-001'), { id: 'PRIN-001', name: 'Principal User', role: 'Principal', phone: '0700000000', nationalId: '12345678', status: 'Active', dateJoined: '2026-01-01' });
+          await setDoc(doc(staffRef, 'SECR-001'), { id: 'SECR-001', name: 'Secretary User', role: 'Secretary', phone: '0700000001', nationalId: '87654321', status: 'Active', dateJoined: '2026-01-01' });
+          await setDoc(doc(staffRef, 'PART-001'), { id: 'PART-001', name: 'Parent User', role: 'Parent', phone: '0700000002', nationalId: '11223344', status: 'Active', dateJoined: '2026-01-01' });
+        }
+
         await Promise.all([
           seedCollectionIfEmpty('students', INITIAL_STUDENTS),
           seedCollectionIfEmpty('attendance', INITIAL_ATTENDANCE),
@@ -86,83 +130,98 @@ export default function App() {
       }
     }
     fetchBootstrap();
-    return () => clearTimeout(backupTimer);
+    return () => {
+      clearTimeout(backupTimer);
+      unsubscribeAuth();
+    };
   }, []);
 
   // Set up Firebase Real-Time subscriptions
   React.useEffect(() => {
-    const unsubStudents = onSnapshot(collection(db, 'students'), (snap) => {
+    const unsubStudents = onSnapshot(getTenantCollection('students'), (snap) => {
       const data: Student[] = [];
       snap.forEach(doc => data.push(doc.data() as Student));
       data.sort((a, b) => a.id.localeCompare(b.id));
       setStudents(data);
     }, (err) => console.error("Students sync error:", err));
 
-    const unsubAttendance = onSnapshot(collection(db, 'attendance'), (snap) => {
+    const unsubAttendance = onSnapshot(getTenantCollection('attendance'), (snap) => {
       const data: AttendanceRecord[] = [];
       snap.forEach(doc => data.push(doc.data() as AttendanceRecord));
       setAttendance(data);
     }, (err) => console.error("Attendance sync error:", err));
 
-    const unsubPermissions = onSnapshot(collection(db, 'permissions'), (snap) => {
+    const unsubPermissions = onSnapshot(getTenantCollection('permissions'), (snap) => {
       const data: PermissionRequest[] = [];
       snap.forEach(doc => data.push(doc.data() as PermissionRequest));
       setPermissions(data);
     }, (err) => console.error("Permissions sync error:", err));
 
-    const unsubHealth = onSnapshot(collection(db, 'healthRecords'), (snap) => {
+    const unsubHealth = onSnapshot(getTenantCollection('healthRecords'), (snap) => {
       const data: HealthRecord[] = [];
       snap.forEach(doc => data.push(doc.data() as HealthRecord));
       setHealthRecords(data);
     }, (err) => console.error("Health records sync error:", err));
 
-    const unsubTransactions = onSnapshot(collection(db, 'transactions'), (snap) => {
+    const unsubTransactions = onSnapshot(getTenantCollection('transactions'), (snap) => {
       const data: PocketMoneyTransaction[] = [];
       snap.forEach(doc => data.push(doc.data() as PocketMoneyTransaction));
       data.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
       setTransactions(data);
     }, (err) => console.error("Transactions sync error:", err));
 
-    const unsubFeePayments = onSnapshot(collection(db, 'feePayments'), (snap) => {
+    const unsubFeePayments = onSnapshot(getTenantCollection('feePayments'), (snap) => {
       const data: FeePayment[] = [];
       snap.forEach(doc => data.push(doc.data() as FeePayment));
       data.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
       setFeePayments(data);
     }, (err) => console.error("Fee payments sync error:", err));
 
-    const unsubCbc = onSnapshot(collection(db, 'cbcAssessments'), (snap) => {
+    const unsubCbc = onSnapshot(getTenantCollection('cbcAssessments'), (snap) => {
       const data: CbcAssessment[] = [];
       snap.forEach(doc => data.push(doc.data() as CbcAssessment));
       setCbcAssessments(data);
     }, (err) => console.error("CBC sync error:", err));
 
-    const unsubGate = onSnapshot(collection(db, 'gateLogs'), (snap) => {
+    const unsubGate = onSnapshot(getTenantCollection('gateLogs'), (snap) => {
       const data: GateLog[] = [];
       snap.forEach(doc => data.push(doc.data() as GateLog));
       data.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
       setGateLogs(data);
     }, (err) => console.error("Gate logs sync error:", err));
 
-    const unsubChat = onSnapshot(collection(db, 'chatMessages'), (snap) => {
+    const unsubChat = onSnapshot(getTenantCollection('chatMessages'), (snap) => {
       const data: ChatMessage[] = [];
       snap.forEach(doc => data.push(doc.data() as ChatMessage));
       data.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
       setChatMessages(data);
     }, (err) => console.error("Chat sync error:", err));
 
-    const unsubStaff = onSnapshot(collection(db, 'staff'), (snap) => {
+    const unsubStaff = onSnapshot(getTenantCollection('staff'), (snap) => {
       const data: Staff[] = [];
       snap.forEach(doc => data.push(doc.data() as Staff));
       data.sort((a, b) => a.id.localeCompare(b.id));
       setStaff(data);
     }, (err) => console.error("Staff sync error:", err));
 
-    const unsubVisitors = onSnapshot(collection(db, 'visitorLogs'), (snap) => {
+    const unsubVisitors = onSnapshot(getTenantCollection('visitorLogs'), (snap) => {
       const data: VisitorLog[] = [];
       snap.forEach(doc => data.push(doc.data() as VisitorLog));
       data.sort((a, b) => b.timeIn.localeCompare(a.timeIn));
       setVisitorLogs(data);
     }, (err) => console.error("Visitor sync error:", err));
+
+    const unsubCanteenItems = onSnapshot(getTenantCollection('canteenItems'), (snap) => {
+      const data: CanteenItem[] = [];
+      snap.forEach(doc => data.push(doc.data() as CanteenItem));
+      setCanteenItems(data);
+    }, (err) => console.error("Canteen items sync error:", err));
+
+    const unsubCanteenOrders = onSnapshot(getTenantCollection('canteenOrders'), (snap) => {
+      const data: CanteenOrder[] = [];
+      snap.forEach(doc => data.push(doc.data() as CanteenOrder));
+      setCanteenOrders(data);
+    }, (err) => console.error("Canteen orders sync error:", err));
 
     return () => {
       unsubStudents();
@@ -176,15 +235,17 @@ export default function App() {
       unsubChat();
       unsubStaff();
       unsubVisitors();
+      unsubCanteenItems();
+      unsubCanteenOrders();
     };
   }, []);
 
   // Active Role switcher with URL route loading
-  const [activeRole, setActiveRole] = useState<'principal' | 'teacher' | 'kiosk' | 'parent' | 'gate' | 'bursar' | 'matron'>(() => {
+  const [activeRole, setActiveRole] = useState<'principal' | 'teacher' | 'kiosk' | 'parent' | 'gate' | 'bursar' | 'matron' | 'canteen'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const roleParam = params.get('role');
-      if (roleParam && ['principal', 'teacher', 'kiosk', 'parent', 'gate', 'bursar', 'matron'].includes(roleParam)) {
+      if (roleParam && ['principal', 'teacher', 'kiosk', 'parent', 'gate', 'bursar', 'matron', 'canteen'].includes(roleParam)) {
         return roleParam as any;
       }
     }
@@ -679,6 +740,7 @@ export default function App() {
               { key: 'teacher', icon: Briefcase, label: 'Teacher App', color: 'text-emerald-400' },
               { key: 'bursar', icon: Landmark, label: 'Bursar Hub', color: 'text-rose-450 text-rose-400' },
               { key: 'matron', icon: Moon, label: 'Matron Hub', color: 'text-indigo-450 text-indigo-400' },
+              { key: 'canteen', icon: ShoppingBasket, label: 'Canteen Hub', color: 'text-amber-500' },
               { key: 'kiosk', icon: Key, label: 'Student Kiosk', color: 'text-amber-400' },
               { key: 'parent', icon: Smartphone, label: 'Parent App', color: 'text-purple-400' },
               { key: 'gate', icon: ShieldCheck, label: 'Gate Security', color: 'text-slate-300' },
@@ -752,11 +814,19 @@ export default function App() {
                 permissions={permissions}
                 healthRecords={healthRecords}
                 gateLogs={gateLogs}
+                visitorLogs={visitorLogs}
                 chatMessages={chatMessages}
                 staff={staff}
                 onApprovePermission={handleApprovePermission}
                 onDeclinePermission={handleDeclinePermission}
                 onSendAnnouncement={handleSendAnnouncement}
+              />
+            )}
+
+            {activeRole === 'canteen' && (
+              <CanteenHub
+                items={canteenItems}
+                orders={canteenOrders}
               />
             )}
 
@@ -843,9 +913,9 @@ export default function App() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] select-none">
           <p>© 2026 TDBK School boarding ecosystem systems. All local sync pools live.</p>
           <div className="flex justify-center gap-4 text-slate-450 font-bold font-mono">
-            <span>DATABASE: LOCAL</span>
-            <span>SYNC: REDIS_MOCK</span>
-            <span>API: MULTI_VIRTUAL</span>
+            <span>DATABASE: FIRESTORE</span>
+            <span>SYNC: LIVE_CLOUD</span>
+            <span>API: SERVERLESS</span>
           </div>
         </div>
       </footer>

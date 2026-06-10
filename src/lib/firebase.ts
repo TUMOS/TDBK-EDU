@@ -16,14 +16,36 @@ import {
   deleteDoc, 
   onSnapshot, 
   writeBatch,
-  getDocFromServer
+  getDocFromServer,
+  enableIndexedDbPersistence
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); /* CRITICAL: The app will break without this line */
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+
+// Enable offline persistence
+enableIndexedDbPersistence(db).catch((err: any) => {
+  if (err.code === 'failed-precondition') {
+    // Multiple tabs open, persistence can only be enabled in one tab at a time.
+    console.warn('Persistence failed: Multiple tabs open.');
+  } else if (err.code === 'unimplemented') {
+    // The current browser does not support all of the features required to enable persistence
+    console.warn('Persistence failed: Browser not supported.');
+  }
+});
+
 export const auth = getAuth();
+
+// Tenant ID for isolation
+const TENANT_ID = 'msa_academy_demo';
+
+// Tenant-aware collection helper
+export const getTenantCollection = (collName: string) => collection(db, 'institutions', TENANT_ID, collName);
+
+// Tenant-aware doc helper
+export const getTenantDoc = (collName: string, docId: string) => doc(db, 'institutions', TENANT_ID, collName, docId);
 
 // Error handler definition per SKILL.md rules
 export enum OperationType {
@@ -87,27 +109,27 @@ testConnection();
 
 // Direct CRUD helper methods to update records, wrapped nicely to prevent update leaks
 export async function createDocument<T extends { id: string }>(collName: string, data: T): Promise<void> {
-  const path = `${collName}/${data.id}`;
+  const path = `institutions/${TENANT_ID}/${collName}/${data.id}`;
   try {
-    await setDoc(doc(db, collName, data.id), data);
+    await setDoc(getTenantDoc(collName, data.id), data);
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
   }
 }
 
 export async function updateDocument(collName: string, id: string, data: Record<string, any>): Promise<void> {
-  const path = `${collName}/${id}`;
+  const path = `institutions/${TENANT_ID}/${collName}/${id}`;
   try {
-    await updateDoc(doc(db, collName, id), data);
+    await updateDoc(getTenantDoc(collName, id), data);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
   }
 }
 
 export async function deleteDocument(collName: string, id: string): Promise<void> {
-  const path = `${collName}/${id}`;
+  const path = `institutions/${TENANT_ID}/${collName}/${id}`;
   try {
-    await deleteDoc(doc(db, collName, id));
+    await deleteDoc(getTenantDoc(collName, id));
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
@@ -116,12 +138,12 @@ export async function deleteDocument(collName: string, id: string): Promise<void
 // Bulk initialization function to seed default collections when empty
 export async function seedCollectionIfEmpty<T extends { id: string }>(collName: string, initialData: T[]): Promise<void> {
   try {
-    const querySnapshot = await getDocs(collection(db, collName));
+    const querySnapshot = await getDocs(getTenantCollection(collName));
     if (querySnapshot.empty) {
       console.log(`Seeding metadata and records for empty Firestore collection: ${collName}`);
       const batch = writeBatch(db);
       initialData.forEach(item => {
-        const docRef = doc(db, collName, item.id);
+        const docRef = getTenantDoc(collName, item.id);
         batch.set(docRef, item);
       });
       await batch.commit();

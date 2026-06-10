@@ -4,15 +4,19 @@
  */
 
 import React, { useState } from 'react';
+import StaffList from './StaffList';
 import { motion } from 'motion/react';
 import { 
   Users, CheckCircle2, AlertTriangle, Activity, 
   CreditCard, ShieldCheck, Mail, Send, Calendar, Clock, ArrowRight, UserCheck,
   UserPlus, UserMinus, ShieldAlert, BadgeInfo, PhoneCall, Check, Sparkles, Trash2, Search, SlidersHorizontal
 } from 'lucide-react';
+import AttendanceTrendChart from './AttendanceTrendChart';
+import ECitizenPaymentTracker from './ECitizenPaymentTracker';
+import SecretaryDashboard from './SecretaryDashboard';
 import { 
   Student, AttendanceRecord, PermissionRequest, 
-  HealthRecord, GateLog, ChatMessage, Staff
+  HealthRecord, GateLog, ChatMessage, Staff, VisitorLog
 } from '../types';
 import { createDocument, updateDocument, deleteDocument } from '../lib/firebase';
 
@@ -22,6 +26,7 @@ interface PrincipalDashboardProps {
   permissions: PermissionRequest[];
   healthRecords: HealthRecord[];
   gateLogs: GateLog[];
+  visitorLogs: VisitorLog[];
   chatMessages: ChatMessage[];
   staff?: Staff[];
   onApprovePermission: (id: string, approverName: string) => void;
@@ -35,17 +40,18 @@ export default function PrincipalDashboard({
   permissions,
   healthRecords,
   gateLogs,
+  visitorLogs,
   chatMessages,
   staff = [],
   onApprovePermission,
   onDeclinePermission,
   onSendAnnouncement,
 }: PrincipalDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'health' | 'finance' | 'gate' | 'staff'>(() => {
+  const [activeTab, setActiveTab] = useState<'overview' | 'attendance' | 'health' | 'finance' | 'gate' | 'staff' | 'secretary' | 'students'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('principalTab');
-      if (tabParam && ['overview', 'attendance', 'health', 'finance', 'gate', 'staff'].includes(tabParam)) {
+      if (tabParam && ['overview', 'attendance', 'health', 'finance', 'gate', 'staff', 'secretary', 'students'].includes(tabParam)) {
         return tabParam as any;
       }
     }
@@ -67,7 +73,7 @@ export default function PrincipalDashboard({
 
   // Staff Management States
   const [enrollName, setEnrollName] = useState('');
-  const [enrollRole, setEnrollRole] = useState<'Teacher' | 'Gate Guardian' | 'Bursar' | 'Matron' | 'Nurse'>('Teacher');
+  const [enrollRole, setEnrollRole] = useState<string>('Teacher');
   const [enrollPhone, setEnrollPhone] = useState('');
   const [enrollNationalId, setEnrollNationalId] = useState('');
   const [enrollSpecialization, setEnrollSpecialization] = useState('');
@@ -76,6 +82,11 @@ export default function PrincipalDashboard({
   const [staffRoleFilter, setStaffRoleFilter] = useState<string>('all');
   const [enrollError, setEnrollError] = useState('');
   const [enrollSuccess, setEnrollSuccess] = useState('');
+
+  // Student Pool Management States
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentGradeFilter, setStudentGradeFilter] = useState<string>('all');
+  const [studentStreamFilter, setStudentStreamFilter] = useState<string>('all');
 
   const handleEnrollStaffSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -219,56 +230,86 @@ export default function PrincipalDashboard({
         </div>
       </div>
 
-      {/* Navigation tabs */}
-      <div className="flex gap-1.5 overflow-x-auto border-b border-[#1f1f23] pb-px mb-6 scrollbar-none">
-        <button 
-          onClick={() => setActiveTab('overview')}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 gap-2 flex items-center break-keep whitespace-nowrap ${
-            activeTab === 'overview' ? 'text-blue-500 border-blue-500 bg-[#15161a] font-semibold' : 'text-gray-500 hover:text-white border-transparent bg-transparent'
-          }`}
-        >
-          Overview
-        </button>
-        <button 
-          onClick={() => setActiveTab('attendance')}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 gap-2 flex items-center break-keep whitespace-nowrap ${
-            activeTab === 'attendance' ? 'text-blue-500 border-blue-500 bg-[#15161a] font-semibold' : 'text-gray-500 hover:text-white border-transparent bg-transparent'
-          }`}
-        >
-          Daily Roll Call
-        </button>
-        <button 
-          onClick={() => setActiveTab('health')}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 gap-2 flex items-center break-keep whitespace-nowrap ${
-            activeTab === 'health' ? 'text-blue-500 border-blue-500 bg-[#15161a] font-semibold' : 'text-gray-500 hover:text-white border-transparent bg-transparent'
-          }`}
-        >
-          Sick Bay Logs ({sickCount})
-        </button>
-        <button 
-          onClick={() => setActiveTab('finance')}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 gap-2 flex items-center break-keep whitespace-nowrap ${
-            activeTab === 'finance' ? 'text-blue-500 border-blue-500 bg-[#15161a] font-semibold' : 'text-gray-500 hover:text-white border-transparent bg-transparent'
-          }`}
-        >
-          Financial Center
-        </button>
-        <button 
-          onClick={() => setActiveTab('gate')}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 gap-2 flex items-center break-keep whitespace-nowrap ${
-            activeTab === 'gate' ? 'text-blue-500 border-blue-500 bg-[#15161a] font-semibold' : 'text-gray-500 hover:text-white border-transparent bg-transparent'
-          }`}
-        >
-          Gate Guard Security
-        </button>
-        <button 
-          onClick={() => setActiveTab('staff')}
-          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors border-b-2 gap-2 flex items-center break-keep whitespace-nowrap ${
-            activeTab === 'staff' ? 'text-blue-500 border-blue-500 bg-[#15161a] font-semibold' : 'text-gray-500 hover:text-white border-transparent bg-transparent'
-          }`}
-        >
-          Staff & Enrollment Portal
-        </button>
+      {/* Navigation Menus */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        
+        {/* Student Academics & Life Menu */}
+        <div className="bg-[#121318] border border-[#1f1f23] rounded-xl overflow-hidden p-2">
+          <h4 className="text-[10px] uppercase font-bold tracking-wider text-slate-400 px-3 py-2 mb-1">Student Academics & Life</h4>
+          <div className="flex gap-1 overflow-x-auto scrollbar-none pb-1 px-1">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'overview' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Overview Dashboard
+            </button>
+            <button 
+              onClick={() => setActiveTab('students')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'students' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Students Pool
+            </button>
+            <button 
+              onClick={() => setActiveTab('attendance')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'attendance' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Daily Roll Call
+            </button>
+          </div>
+        </div>
+
+        {/* School Operations Menu */}
+        <div className="bg-[#121318] border border-[#1f1f23] rounded-xl overflow-hidden p-2">
+          <h4 className="text-[10px] uppercase font-bold tracking-wider text-slate-400 px-3 py-2 mb-1">School Operations (Staff & Admin)</h4>
+          <div className="flex gap-1 overflow-x-auto scrollbar-none pb-1 px-1">
+            <button 
+              onClick={() => setActiveTab('staff')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'staff' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Staff & HR
+            </button>
+            <button 
+              onClick={() => setActiveTab('finance')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'finance' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Finance Center
+            </button>
+            <button 
+              onClick={() => setActiveTab('gate')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'gate' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Security Checkpoints
+            </button>
+            <button 
+              onClick={() => setActiveTab('health')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'health' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Sick Bay ({sickCount})
+            </button>
+            <button 
+              onClick={() => setActiveTab('secretary')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors whitespace-nowrap ${
+                activeTab === 'secretary' ? 'text-white bg-[#1a1b23]' : 'text-gray-400 hover:text-gray-200 hover:bg-[#1a1b23]/50'
+              }`}
+            >
+              Secretary Hub
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Tabs Content */}
@@ -289,9 +330,24 @@ export default function PrincipalDashboard({
                     </h3>
                     <p className="text-xs text-gray-500">Sign off out-of-school leave permits requested by parents or teaching staff.</p>
                   </div>
-                  <span className="bg-amber-100 text-amber-800 font-mono text-xs font-semibold px-2 py-0.5 rounded-full">
-                    {pendingPerms} pending
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {pendingPerms > 0 && (
+                      <button
+                        onClick={() => {
+                          if (window.confirm("Are you sure you want to approve all pending passes?")) {
+                            permissions.filter(p => p.status === 'Pending').forEach(p => onApprovePermission(p.id, "Principal Wekesa"));
+                          }
+                        }}
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors flex items-center gap-1"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                        Bulk Approve
+                      </button>
+                    )}
+                    <span className="bg-amber-100 text-amber-800 font-mono text-xs font-semibold px-2 py-0.5 rounded-full">
+                      {pendingPerms} pending
+                    </span>
+                  </div>
                 </div>
 
                 {permissions.filter(p => p.status === 'Pending').length === 0 ? (
@@ -342,37 +398,8 @@ export default function PrincipalDashboard({
                 )}
               </div>
 
-              {/* Attendance Bar Chart Representation (SVG) */}
-              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs">
-                <h3 className="font-semibold text-slate-900 mb-1">Weekly Roll Stability</h3>
-                <p className="text-xs text-gray-500 mb-4">Boarding and day roll presence metrics aggregated for {totalStudents} active accounts.</p>
-                
-                <div className="h-44 flex items-end gap-3 px-2 pt-4">
-                  {/* Visual bars */}
-                  {[
-                    { day: 'Mon', presence: 100 },
-                    { day: 'Tue', presence: 96 },
-                    { day: 'Wed', presence: 98 },
-                    { day: 'Thu', presence: 92 },
-                    { day: 'Fri (Today)', presence: Math.round((presentCount / totalStudents) * 100) },
-                  ].map((d, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                      <div className="text-xs font-semibold text-indigo-600 font-mono opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white rounded px-1.5 py-0.5 -mt-6 absolute">
-                        {d.presence}%
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-lg h-32 relative flex items-end overflow-hidden">
-                        <motion.div 
-                          className="w-full bg-indigo-500 hover:bg-indigo-600 transition-colors rounded-b-lg"
-                          initial={{ height: 0 }}
-                          animate={{ height: `${d.presence}%` }}
-                          transition={{ delay: i * 0.1, duration: 0.5 }}
-                        />
-                      </div>
-                      <span className="text-xs font-medium text-gray-500">{d.day}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              {/* Attendance Trend Chart */}
+              <AttendanceTrendChart attendance={attendance} />
             </>
           )}
 
@@ -465,73 +492,76 @@ export default function PrincipalDashboard({
           )}
 
           {activeTab === 'finance' && (
-            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-6">
-              <div>
-                <h3 className="font-semibold text-slate-900">Bursar Ledger Analysis</h3>
-                <p className="text-xs text-gray-500">Consolidated overview of direct tuition fees and smart-card pocket money pools.</p>
-              </div>
+            <div className="space-y-6">
+              <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-6">
+                <div>
+                  <h3 className="font-semibold text-slate-900">Bursar Ledger Analysis</h3>
+                  <p className="text-xs text-gray-500">Consolidated overview of direct tuition fees and smart-card pocket money pools.</p>
+                </div>
 
-              {/* Financial balances grids */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/20 text-slate-800">
-                  <span className="text-xs text-gray-500 font-medium tracking-tight">Tuition Collected</span>
-                  <p className="text-2xl font-bold font-mono text-emerald-700 mt-1">KES {totalFeesPaid.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Direct bank transfer and M-Pesa</p>
+                {/* Financial balances grids */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-xl border border-emerald-100 bg-emerald-50/20 text-slate-800">
+                    <span className="text-xs text-gray-500 font-medium tracking-tight">Tuition Collected</span>
+                    <p className="text-2xl font-bold font-mono text-emerald-700 mt-1">KES {totalFeesPaid.toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Direct bank transfer and M-Pesa</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-red-100 bg-red-50/20 text-slate-800">
+                    <span className="text-xs text-gray-500 font-medium tracking-tight">Out-standing Fees Balance</span>
+                    <p className="text-2xl font-bold font-mono text-red-700 mt-1">KES {totalFeesBalance.toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Sms warning notifications ready</p>
+                  </div>
+                  <div className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/20 text-slate-800">
+                    <span className="text-xs text-gray-500 font-medium tracking-tight">Kiosk Card Depository</span>
+                    <p className="text-2xl font-bold font-mono text-indigo-700 mt-1">KES {totalPocketMoney.toLocaleString()}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Parent-funded pocket cash holdings</p>
+                  </div>
                 </div>
-                <div className="p-4 rounded-xl border border-red-100 bg-red-50/20 text-slate-800">
-                  <span className="text-xs text-gray-500 font-medium tracking-tight">Out-standing Fees Balance</span>
-                  <p className="text-2xl font-bold font-mono text-red-700 mt-1">KES {totalFeesBalance.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Sms warning notifications ready</p>
-                </div>
-                <div className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/20 text-slate-800">
-                  <span className="text-xs text-gray-500 font-medium tracking-tight">Kiosk Card Depository</span>
-                  <p className="text-2xl font-bold font-mono text-indigo-700 mt-1">KES {totalPocketMoney.toLocaleString()}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">Parent-funded pocket cash holdings</p>
-                </div>
-              </div>
 
-              {/* Student Accounts Sub-table */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest font-mono">Individual Student Ledger Cards</h4>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-sm">
-                    <thead>
-                      <tr className="border-b border-gray-150 text-xs font-mono text-gray-400 font-light">
-                        <th className="py-2">Student</th>
-                        <th className="py-2">Tuition Coverage</th>
-                        <th className="py-2">Pending Balance</th>
-                        <th className="py-2">Kiosk Cash Wallet</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-150">
-                      {students.map((st) => {
-                        const paidPercent = Math.round((st.paidFees / st.totalFees) * 100);
-                        return (
-                          <tr key={st.id} className="hover:bg-slate-50/30 text-xs py-2">
-                            <td className="py-3 font-semibold text-slate-700">
-                              {st.name} <span className="font-normal font-mono text-gray-400">({st.id})</span>
-                            </td>
-                            <td className="py-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-20 bg-slate-100 rounded-full h-1.5">
-                                  <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${paidPercent}%` }}></div>
+                {/* Student Accounts Sub-table */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-widest font-mono">Individual Student Ledger Cards</h4>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-150 text-xs font-mono text-gray-400 font-light">
+                          <th className="py-2">Student</th>
+                          <th className="py-2">Tuition Coverage</th>
+                          <th className="py-2">Pending Balance</th>
+                          <th className="py-2">Kiosk Cash Wallet</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-150">
+                        {students.map((st) => {
+                          const paidPercent = Math.round((st.paidFees / st.totalFees) * 100);
+                          return (
+                            <tr key={st.id} className="hover:bg-slate-50/30 text-xs py-2">
+                              <td className="py-3 font-semibold text-slate-700">
+                                {st.name} <span className="font-normal font-mono text-gray-400">({st.id})</span>
+                              </td>
+                              <td className="py-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-20 bg-slate-100 rounded-full h-1.5">
+                                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${paidPercent}%` }}></div>
+                                  </div>
+                                  <span className="font-mono text-slate-700 font-semibold">{paidPercent}%</span>
                                 </div>
-                                <span className="font-mono text-slate-700 font-semibold">{paidPercent}%</span>
-                              </div>
-                            </td>
-                            <td className="py-3 font-mono text-red-600 font-semibold">
-                              KES {(st.totalFees - st.paidFees).toLocaleString()}
-                            </td>
-                            <td className="py-3 font-mono font-bold text-indigo-600">
-                              KES {st.pocketMoneyBalance.toLocaleString()}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              </td>
+                              <td className="py-3 font-mono text-red-600 font-semibold">
+                                KES {(st.totalFees - st.paidFees).toLocaleString()}
+                              </td>
+                              <td className="py-3 font-mono font-bold text-indigo-600">
+                                KES {st.pocketMoneyBalance.toLocaleString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
+              <ECitizenPaymentTracker />
             </div>
           )}
 
@@ -580,11 +610,102 @@ export default function PrincipalDashboard({
             </div>
           )}
 
+          {activeTab === 'students' && (
+            <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4">
+              <div>
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+                    <Users className="text-blue-500 h-5 w-5" /> 
+                    Students Pool
+                  </h3>
+                  <p className="text-xs text-gray-500">Manage all student pools filtered by grade or stream classifications.</p>
+                </div>
+                {/* Search & filters */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-gray-400" />
+                    <input 
+                      type="text"
+                      placeholder="Search student Name or ID..."
+                      value={studentSearch}
+                      onChange={(e) => setStudentSearch(e.target.value)}
+                      className="text-xs pl-8 pr-3 py-1.5 w-48 bg-gray-50 border rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 text-slate-800 placeholder-gray-400"
+                    />
+                  </div>
+                  <select
+                    value={studentGradeFilter}
+                    onChange={(e: any) => setStudentGradeFilter(e.target.value)}
+                    className="text-xs bg-gray-50 border rounded-lg p-1.5 text-gray-600 focus:outline-none"
+                  >
+                    <option value="all">All Grades</option>
+                    {Array.from(new Set(students.map(s => s.grade))).sort().map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={studentStreamFilter}
+                    onChange={(e: any) => setStudentStreamFilter(e.target.value)}
+                    className="text-xs bg-gray-50 border rounded-lg p-1.5 text-gray-600 focus:outline-none"
+                  >
+                    <option value="all">All Streams</option>
+                    {Array.from(new Set(students.map(s => s.stream))).sort().map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+              
+              <div className="overflow-x-auto mt-4 border border-gray-150 rounded-xl">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-slate-50 text-slate-500 font-medium text-xs border-b border-gray-150 uppercase tracking-wider">
+                      <th className="py-2.5 px-3">Student Name</th>
+                      <th className="py-2.5 px-3">ID Number</th>
+                      <th className="py-2.5 px-3">Grade</th>
+                      <th className="py-2.5 px-3">Stream</th>
+                      <th className="py-2.5 px-3 border-l border-gray-150 text-right">Academics Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-150">
+                    {students
+                      .filter(s => studentSearch === '' || s.name.toLowerCase().includes(studentSearch.toLowerCase()) || s.id.toLowerCase().includes(studentSearch.toLowerCase()))
+                      .filter(s => studentGradeFilter === 'all' || s.grade === studentGradeFilter)
+                      .filter(s => studentStreamFilter === 'all' || s.stream === studentStreamFilter)
+                      .map((st) => (
+                        <tr key={st.id} className="hover:bg-slate-50/50 text-sm">
+                          <td className="py-2.5 px-3 font-semibold text-slate-800">{st.name}</td>
+                          <td className="py-2.5 px-3 font-mono text-gray-500">{st.id}</td>
+                          <td className="py-2.5 px-3 text-emerald-700 font-medium">{st.grade}</td>
+                          <td className="py-2.5 px-3 text-slate-600">{st.stream}</td>
+                          <td className="py-2.5 px-3 border-l border-gray-150 text-right">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wide ${
+                              st.status === 'In School' ? 'bg-emerald-100 text-emerald-800' : 
+                              st.status === 'Sick Bay' ? 'bg-amber-100 text-amber-800' :
+                              st.status === 'Suspended' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {st.status || 'Active'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    {students.filter(s => studentSearch === '' || s.name.toLowerCase().includes(studentSearch.toLowerCase()) || s.id.toLowerCase().includes(studentSearch.toLowerCase()))
+                      .filter(s => studentGradeFilter === 'all' || s.grade === studentGradeFilter)
+                      .filter(s => studentStreamFilter === 'all' || s.stream === studentStreamFilter).length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-gray-400 text-xs italic">
+                          No students matched your search criteria.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'staff' && (
             <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-gray-100">
-                <div>
-                  <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+              <div>
+                <h3 className="font-semibold text-slate-900 flex items-center gap-2">
                     <Users className="text-blue-500 h-5 w-5" /> 
                     Staff Directory & Roster
                   </h3>
@@ -612,98 +733,22 @@ export default function PrincipalDashboard({
                     <option value="Terminated">Terminated Only</option>
                   </select>
                 </div>
-              </div>
-
-              {/* Staff Cards Layout */}
-              {(() => {
-                const filteredStaff = staff.filter(m => {
-                  const matchSearch = m.name.toLowerCase().includes(staffSearch.toLowerCase()) || 
-                                      m.role.toLowerCase().includes(staffSearch.toLowerCase()) ||
-                                      m.id.toLowerCase().includes(staffSearch.toLowerCase());
-                  const matchStatus = roleFilter === 'all' || m.status === roleFilter;
-                  return matchSearch && matchStatus;
-                });
-
-                if (filteredStaff.length === 0) {
-                  return (
-                    <div className="text-center py-12 bg-gray-50 border border-dashed rounded-xl">
-                      <ShieldAlert className="h-8 w-8 text-gray-300 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500 font-medium">No matching staff members found</p>
-                      <p className="text-xs text-gray-400">Clear search filters to recall complete database roster</p>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {filteredStaff.map((person) => (
-                      <div 
-                        key={person.id} 
-                        className={`p-4 border rounded-xl transition shadow-xs flex flex-col justify-between ${
-                          person.status === 'Terminated' 
-                            ? 'bg-red-50/20 border-red-100 opacity-75' 
-                            : 'bg-slate-50/40 border-gray-150 hover:border-blue-200 hover:bg-white'
-                        }`}
-                      >
-                        <div className="space-y-2">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-slate-800 text-sm">{person.name}</span>
-                                <span className={`text-[9px] font-mono px-1.5 py-0.5 rounded font-bold ${
-                                  person.status === 'Active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
-                                }`}>
-                                  {person.status}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-400 font-mono tracking-wide">{person.id} | {person.role}</p>
-                            </div>
-                            <span className="p-1.5 bg-[#f1f2f6] text-[#3c3e4a] rounded-lg text-xs font-semibold font-mono">
-                              ID: {person.nationalId}
-                            </span>
-                          </div>
-
-                          <div className="text-xs text-slate-600 space-y-1 bg-white border border-gray-100 p-2.5 rounded-lg">
-                            <p className="flex items-center gap-1.5 text-slate-700">
-                              <BadgeInfo className="h-3.5 w-3.5 text-blue-500" />
-                              <span className="font-semibold">Specialization:</span> {person.specialization}
-                            </p>
-                            <p className="flex items-center gap-1.5 text-slate-700">
-                              <PhoneCall className="h-3.5 w-3.5 text-emerald-500" />
-                              <span className="font-semibold">Contact:</span> {person.phone}
-                            </p>
-                            <p className="text-[10px] text-gray-400 font-mono">Enrolled on: {person.dateJoined}</p>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-end items-center gap-2 pt-3 border-t border-gray-150 mt-3 text-xs">
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteStaffLog(person.id)}
-                            className="p-1.5 text-red-650 bg-red-50 hover:bg-red-100 rounded-lg text-xs transition border border-red-250 cursor-pointer"
-                            title="Completely Purge Official Record"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                          
-                          <button
-                            type="button"
-                            onClick={() => handleToggleStaffStatus(person.id, person.status)}
-                            className={`px-3 py-1 rounded-lg text-xs font-semibold font-mono border transition cursor-pointer ${
-                              person.status === 'Active' 
-                                ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100' 
-                                : 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
-                            }`}
-                          >
-                            {person.status === 'Active' ? 'Terminate Privileges' : 'Re-Activate Staff'}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
+              
+              <StaffList 
+                staff={staff} 
+                staffSearch={staffSearch} 
+                roleFilter={roleFilter} 
+                handleDeleteStaffLog={handleDeleteStaffLog} 
+                handleToggleStaffStatus={handleToggleStaffStatus} 
+              />
             </div>
+          )}
+
+          {activeTab === 'secretary' && (
+            <SecretaryDashboard 
+              chatMessages={chatMessages}
+              visitorLogs={visitorLogs}
+            />
           )}
 
         </div>
@@ -735,18 +780,27 @@ export default function PrincipalDashboard({
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Role Assignment</label>
-                    <select
+                    <label className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">Role Assignment / Office Title</label>
+                    <input
+                      type="text"
+                      list="dynamicRoles"
                       value={enrollRole}
-                      onChange={(e: any) => setEnrollRole(e.target.value)}
+                      onChange={(e) => setEnrollRole(e.target.value)}
+                      placeholder="Select or type a custom role"
                       className="w-full text-xs p-2.5 bg-gray-50 border border-gray-150 rounded-xl focus:outline-none focus:bg-white focus:ring-1 focus:ring-blue-500 text-slate-800"
-                    >
-                      <option value="Teacher">Teacher</option>
-                      <option value="Gate Guardian">Gate Guardian</option>
-                      <option value="Bursar">Bursar</option>
-                      <option value="Matron">Matron</option>
-                      <option value="Nurse">Nurse</option>
-                    </select>
+                    />
+                    <datalist id="dynamicRoles">
+                      <option value="Teacher" />
+                      <option value="Gate Guardian" />
+                      <option value="Bursar" />
+                      <option value="Matron" />
+                      <option value="Nurse" />
+                      <option value="School Deputy" />
+                      <option value="Director" />
+                      <option value="Accounts" />
+                      <option value="Secretary" />
+                      <option value="Administrator" />
+                    </datalist>
                   </div>
 
                   <div className="space-y-1">

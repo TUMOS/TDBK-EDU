@@ -3,6 +3,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export interface Tenant {
+  school_name: string;
+  custom_onboarding_fee: number;
+  active_student_count: number;
+}
+
 export interface Student {
   id: string; // e.g. "TDBK-001"
   name: string;
@@ -130,8 +136,9 @@ export interface ChatMessage {
 
 export interface Staff {
   id: string; // e.g., "STF-101"
+  authUid?: string; // Firebase Auth UID for role mapping
   name: string;
-  role: 'Teacher' | 'Gate Guardian' | 'Bursar' | 'Matron' | 'Nurse';
+  role: string;
   phone: string;
   nationalId: string;
   specialization?: string; // Subject for Teachers, Shift/Station for Guard
@@ -151,5 +158,22 @@ export interface VisitorLog {
   timeOut?: string;
   status: 'Inside' | 'Checked-Out';
   clearedBy: string;
+}
+
+export interface CanteenItem {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  category: 'Snack' | 'Drink' | 'Meal';
+}
+
+export interface CanteenOrder {
+  id: string;
+  studentId: string;
+  studentName: string;
+  items: { itemId: string; name: string; price: number; quantity: number }[];
+  total: number;
+  timestamp: string;
 }
 

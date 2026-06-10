@@ -169,7 +169,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "role": { "type": "string", "enum": ["Teacher", "Gate Guardian", "Bursar", "Matron", "Nurse"] },
+        "role": { "type": "string", "enum": ["Teacher", "Gate Guardian", "Bursar", "Matron", "Nurse", "Secretary"] },
         "phone": { "type": "string" },
         "nationalId": { "type": "string" },
         "specialization": { "type": "string" },
@@ -196,52 +196,86 @@
         "clearedBy": { "type": "string" }
       },
       "required": ["id", "name", "phone", "nationalId", "purpose", "timeIn", "status", "clearedBy"]
+    },
+    "CanteenItem": {
+      "title": "CanteenItem",
+      "description": "Canteen catalog item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "stock": { "type": "number" },
+        "category": { "type": "string", "enum": ["Snack", "Drink", "Meal"] }
+      },
+      "required": ["id", "name", "price", "stock", "category"]
+    },
+    "CanteenOrder": {
+      "title": "CanteenOrder",
+      "description": "Record of canteen purchase",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "studentId": { "type": "string" },
+        "studentName": { "type": "string" },
+        "total": { "type": "number" },
+        "timestamp": { "type": "string" }
+      },
+      "required": ["id", "studentId", "studentName", "total", "timestamp"]
     }
   },
   "firestore": {
-    "/students/{studentId}": {
+    "/institutions/{tenantId}/students/{studentId}": {
       "schema": "Student",
       "description": "Individual student files"
     },
-    "/attendance/{attendanceId}": {
+    "/institutions/{tenantId}/attendance/{attendanceId}": {
       "schema": "AttendanceRecord",
       "description": "Class roll records"
     },
-    "/permissions/{permissionId}": {
+    "/institutions/{tenantId}/permissions/{permissionId}": {
       "schema": "PermissionRequest",
       "description": "Approved out of bounds leave slips"
     },
-    "/healthRecords/{healthId}": {
+    "/institutions/{tenantId}/healthRecords/{healthId}": {
       "schema": "HealthRecord",
       "description": "Infirmary visit admissions"
     },
-    "/transactions/{transactionId}": {
+    "/institutions/{tenantId}/transactions/{transactionId}": {
       "schema": "PocketMoneyTransaction",
       "description": "Ledger of digital tuck shop cash transactions"
     },
-    "/feePayments/{paymentId}": {
+    "/institutions/{tenantId}/feePayments/{paymentId}": {
       "schema": "FeePayment",
       "description": "Bursar receipt registers"
     },
-    "/cbcAssessments/{cbcId}": {
+    "/institutions/{tenantId}/cbcAssessments/{cbcId}": {
       "schema": "CbcAssessment",
       "description": "Pedagogical achievement scores"
     },
-    "/gateLogs/{gateLogId}": {
+    "/institutions/{tenantId}/gateLogs/{gateLogId}": {
       "schema": "GateLog",
       "description": "Physical security checkpoint crossing history logs"
     },
-    "/chatMessages/{chatId}": {
+    "/institutions/{tenantId}/chatMessages/{chatId}": {
       "schema": "ChatMessage",
       "description": "Instant chat communication messages"
     },
-    "/staff/{staffId}": {
+    "/institutions/{tenantId}/staff/{staffId}": {
       "schema": "Staff",
       "description": "School administration and general staff profiles"
     },
-    "/visitorLogs/{visitorLogId}": {
+    "/institutions/{tenantId}/visitorLogs/{visitorLogId}": {
       "schema": "VisitorLog",
       "description": "Live digital register logs of inbound/outbound external visitors"
+    },
+    "/institutions/{tenantId}/canteenItems/{itemId}": {
+      "schema": "CanteenItem",
+      "description": "Catalog of available items in the school canteen"
+    },
+    "/institutions/{tenantId}/canteenOrders/{orderId}": {
+      "schema": "CanteenOrder",
+      "description": "Log of student canteen purchases"
     }
   }
 }

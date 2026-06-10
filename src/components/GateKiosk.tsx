@@ -36,6 +36,7 @@ export default function GateKiosk({
 
   // Gate management state
   const [typedStudentId, setTypedStudentId] = useState('');
+  const [isVisitorModalOpen, setIsVisitorModalOpen] = useState(false);
   const [scanFeedback, setScanFeedback] = useState<{ status: 'success' | 'error'; msg: string } | null>(null);
   const [activeQRModalPass, setActiveQRModalPass] = useState<PermissionRequest | null>(null);
 
@@ -91,6 +92,7 @@ export default function GateKiosk({
       setVisitorNationalId('');
       setVisitorStudentId('');
       setCustomVisitorPurpose('');
+      setIsVisitorModalOpen(false);
 
       // Auto clear feedback
       setTimeout(() => setVisitorSuccess(''), 5000);
@@ -183,6 +185,14 @@ export default function GateKiosk({
 
         {/* Console stats */}
         <div className="flex gap-4 mt-4 md:mt-0 max-sm:grid max-sm:grid-cols-2 text-xs">
+          <button 
+            onClick={() => setIsVisitorModalOpen(true)}
+            className="p-2 border border-blue-500/30 bg-blue-950/40 rounded-xl hover:bg-blue-950/60 transition"
+          >
+            <UserPlus className="h-4 w-4 text-blue-400 mb-1" />
+            <span className="text-blue-200 font-bold">Visitor Check-in</span>
+          </button>
+          
           <div className="p-2 border border-slate-800 bg-slate-950/60 rounded-xl">
             <span className="text-slate-500 font-mono block">CAMP UNDERWATCH</span>
             <span className="text-sm font-bold text-slate-200">
@@ -430,6 +440,51 @@ export default function GateKiosk({
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* VISITOR CHECK-IN MODAL */}
+      {isVisitorModalOpen && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-[3px]">
+          <div className="bg-[#12131c] border border-slate-800 rounded-3xl p-6 max-w-sm w-full space-y-4 shadow-2xl relative">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2 uppercase tracking-wide">
+              <UserPlus className="text-blue-500 h-5 w-5" /> Visitor Check-In
+            </h3>
+            <form onSubmit={handleRegisterVisitorSubmit} className="space-y-3">
+              <input 
+                type="text" placeholder="Full Name" value={visitorName} onChange={e => setVisitorName(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 p-2 text-sm rounded-xl text-white"
+              />
+              <input 
+                type="text" placeholder="Phone Number" value={visitorPhone} onChange={e => setVisitorPhone(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 p-2 text-sm rounded-xl text-white"
+              />
+              <input 
+                type="text" placeholder="National ID" value={visitorNationalId} onChange={e => setVisitorNationalId(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 p-2 text-sm rounded-xl text-white"
+              />
+              <select 
+                value={visitorPurpose} onChange={e => setVisitorPurpose(e.target.value)}
+                className="w-full bg-slate-900 border border-slate-800 p-2 text-sm rounded-xl text-white"
+              >
+                <option>Parent-Teacher Consultation</option>
+                <option>Campus Delivery</option>
+                <option>Official Meeting</option>
+                <option>Other</option>
+              </select>
+              <div className="flex gap-2">
+                <button 
+                  type="button"
+                  onClick={() => setIsVisitorModalOpen(false)}
+                  className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs"
+                >Cancel</button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs"
+                >Check In</button>
+              </div>
+            </form>
           </div>
         </div>
       )}
