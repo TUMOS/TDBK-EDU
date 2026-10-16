@@ -1,17 +1,37 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // --- SECURITY UTILITIES ---
+    // Authorization contract:
+    // - The caller must be authenticated.
+    // - tenantId must be assigned by trusted server-side identity provisioning
+    //   as a Firebase Auth custom claim; client-supplied tenant IDs are not trusted.
+    // - Do not deploy until the sign-in/provisioning flow sets and refreshes this
+    //   claim for every authorized school user and the Rules Emulator suite passes.
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // --- TENANT DATA ---
+    function belongsToTenant(tenantId) {
+      return isSignedIn()
+        && request.auth.token.tenantId is string
+        && request.auth.token.tenantId == tenantId;
+    }
+
     match /institutions/{tenantId} {
+      // Tenant root document and every nested record are protected by the same
+      // tenant boundary. This prevents anonymous and cross-tenant access.
+      // Role-based write restrictions are a required follow-up before production.
+      allow read, write: if belongsToTenant(tenantId);
+
       match /{document=**} {
-        // PERMISSIVE FOR DEBUGGING
-        allow read, write: if true;
+        allow read, write: if belongsToTenant(tenantId);
       }
+    }
+
+    // Default deny for every path not explicitly covered above.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
